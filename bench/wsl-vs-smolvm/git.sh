@@ -27,8 +27,10 @@ for where in shared local; do
   t0=$(now); git clone -q --no-hardlinks --no-checkout $src $w; git -C $w checkout -q $A; sync; t1=$(now)
   echo "${where}_git_clone_s,$(el $t0 $t1),s"
   cd $w
-  t0=$(now); git status --porcelain >/dev/null; t1=$(now)
-  echo "${where}_git_status_first_s,$(el $t0 $t1),s"
+  # Files written in the same second as git's index are "racily clean", and
+  # git re-hashes them on every status until the index is rewritten later.
+  # That window depends on timing, not on the VM, so let it pass first.
+  sleep 2; git status --porcelain >/dev/null; sleep 1
   t0=$(now); for i in 1 2 3 4 5 6 7 8 9 10; do git status --porcelain >/dev/null; done; t1=$(now)
   echo "${where}_git_status_x10_s,$(el $t0 $t1),s"
   t0=$(now); git checkout -q $B; sync; t1=$(now)
